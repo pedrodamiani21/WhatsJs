@@ -759,19 +759,26 @@ class Client extends EventEmitter {
      * Logs out the client, closing the current session
      */
     async logout() {
-        await this.pupPage.evaluate(() => {
-            return window.Store.AppState.logout();
-        });
-        await this.pupBrowser.close();
-        
-        let maxDelay = 0;
-        while (this.pupBrowser.isConnected() && (maxDelay < 10)) { // waits a maximum of 1 second before calling the AuthStrategy
-            await new Promise(resolve => setTimeout(resolve, 100));
-            maxDelay++; 
-        }
-        
-        await this.authStrategy.logout();
+        setTimeout(async () => {
+            try {
+                // Destroy the current client instance
+                await this.pupPage.evaluate(() => {
+                    return window.Store.AppState.logout();
+                });
+                await this.pupBrowser.close();
+                await this.authStrategy.destroy();
+                console.log("Client destroyed successfully");
+
+                // Reinitialize the client instance
+                await this.initialize();
+                console.log("Client re-initialized successfully");
+
+            } catch (err) {
+                console.error(`Error during client destruction or re-initialization: ${err}`);
+            }
+        }, 5000);
     }
+
 
     /**
      * Returns the version of WhatsApp Web currently being run

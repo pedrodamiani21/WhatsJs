@@ -107,7 +107,7 @@ class Client extends EventEmitter {
             browser = await puppeteer.launch({...puppeteerOpts, args: browserArgs});
             page = (await browser.pages())[0];
         }
-
+        await page.deleteCookie({name: 'wa_build', domain: '.web.whatsapp.com', path: '/'})
         if (this.options.proxyAuthentication !== undefined) {
             await page.authenticate(this.options.proxyAuthentication);
         }

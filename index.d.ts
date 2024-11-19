@@ -176,7 +176,15 @@ declare namespace WAWebJS {
          * @param flag true/false on or off
          */
         setAutoDownloadVideos(flag: boolean): Promise<void>
-                
+
+        /**
+         * Get user device count by ID
+         * Each WaWeb Connection counts as one device, and the phone (if exists) counts as one
+         * So for a non-enterprise user with one WaWeb connection it should return "2"
+         * @param {string} contactId
+         */
+        getContactDeviceCount(contactId: string): Promise<Number>          
+        
         /** Changes and returns the archive state of the Chat */
         unarchiveChat(chatId: string): Promise<boolean>
 
@@ -383,6 +391,14 @@ declare namespace WAWebJS {
 
         /** Emitted when the RemoteAuth session is saved successfully on the external Database */
         on(event: 'remote_session_saved', listener: () => void): this
+
+        /**
+         * Emitted when some poll option is selected or deselected,
+         * shows a user's current selected option(s) on the poll
+         */
+        on(event: 'vote_update', listener: (
+            vote: PollVote
+        ) => void): this
     }
 
     /** Current connection information */
@@ -1030,6 +1046,34 @@ declare namespace WAWebJS {
         constructor(pollName: string, pollOptions: Array<string>, options?: PollSendOptions)
     }
 
+    /** Represents a Poll Vote on WhatsApp */
+    export interface PollVote {
+        /** The person who voted */
+        voter: string;
+
+        /**
+         * The selected poll option(s)
+         * If it's an empty array, the user hasn't selected any options on the poll,
+         * may occur when they deselected all poll options
+         */
+        selectedOptions: SelectedPollOption[];
+
+        /** Timestamp the option was selected or deselected at */
+        interractedAtTs: number;
+
+        /** The poll creation message associated with the poll vote */
+        parentMessage: Message;
+    }
+
+    /** Selected poll option structure */
+    export interface SelectedPollOption {
+        /** The local selected option ID */
+        id: number;
+
+        /** The option name */
+        name: string;
+    }
+
     export interface Label {
         /** Label name */
         name: string,
@@ -1073,6 +1117,8 @@ declare namespace WAWebJS {
         }[]
         /** Send 'seen' status */
         sendSeen?: boolean
+        /** Bot Wid when doing a bot mention like @Meta AI */
+        invokedBotWid?: string
         /** Media to be sent */
         media?: MessageMedia
         /** Extra options */
@@ -1353,8 +1399,10 @@ declare namespace WAWebJS {
         timestamp: number,
         /** Amount of messages unread */
         unreadCount: number,
-        /** Last message fo chat */
+        /** Last message of chat */
         lastMessage: Message,
+        /** Indicates if the Chat is pinned */
+        pinned: boolean,
 
         /** Archives this chat */
         archive: () => Promise<void>,
@@ -1535,6 +1583,12 @@ declare namespace WAWebJS {
         setSubject: (subject: string) => Promise<boolean>;
         /** Updates the group description */
         setDescription: (description: string) => Promise<boolean>;
+        /**
+         * Updates the group setting to allow only admins to add members to the group.
+         * @param {boolean} [adminsOnly=true] Enable or disable this option 
+         * @returns {Promise<boolean>} Returns true if the setting was properly updated. This can return false if the user does not have the necessary permissions.
+         */
+        setAddMembersAdminsOnly: (adminsOnly?: boolean) => Promise<boolean>;
         /** Updates the group settings to only allow admins to send messages
          * @param {boolean} [adminsOnly=true] Enable or disable this option
          * @returns {Promise<boolean>} Returns true if the setting was properly updated. This can return false if the user does not have the necessary permissions.
